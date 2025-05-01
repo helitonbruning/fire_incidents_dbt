@@ -61,27 +61,42 @@ The project is organized as follows:
    cd <repository-directory>
    ```
 
-2. **Set Up the DBT Project**:
-   - Navigate to the DBT project directory:
-     ```bash
-     cd ../fire_incidents_dbt/fire_incidents_dbt/dbt_project
-     ```
-   - Ensure the `profiles.yml` is configured to connect to the PostgreSQL database:
-     ```yaml
-     fire_incidents_dbt:
-       target: dev
-       outputs:
-         dev:
-           type: postgres
-           host: localhost
-           port: 5432
-           user: admin
-           password: ""  # Add password if required
-           dbname: fire_incidents
-           schema: public
-     ```
+   2. **Set Up the DBT Project**:
+      - Navigate to the DBT project directory:
+        ```bash
+        cd ../fire_incidents_dbt/fire_incidents_dbt/dbt_project
+        ```
+      - Ensure the `profiles.yml` is configured to connect to the PostgreSQL database:
+        ```yaml
+        fire_incidents_dbt:
+          target: dev
+          outputs:
+            dev:
+              type: postgres
+              host: localhost
+              port: 5432
+              user: admin
+              password: ""  # Add password if required
+              dbname: fire_incidents
+              schema: public
+        ```
+      - OR Create a `.env` file in the root directory with the following content:
+          ```yaml 
+              DB_HOST=localhost
+              DB_PORT=5432
+              DB_NAME=fire_incidents
+              DB_USER=admin
+              DB_PASSWORD=securepassword
+          ```
 
-3. **Run the DBT Pipeline**:
+3. **Run the ETL Script**:
+   Execute the Python script to fetch data from the API and load it into PostgreSQL:
+   ```bash
+   cd API
+   python load_data.py
+   ```
+   
+4. **Run the DBT Pipeline**:
    - Execute a full refresh to build the tables and views:
      ```bash
      dbt run --full-refresh
@@ -109,6 +124,27 @@ The project is organized as follows:
 ## Usage
 - **Query the Fact Table**: Use `fact_fire_incidents` for detailed incident analysis, including columns like `suppression_personnel`, `estimated_property_loss`, and `fire_fatalities`.
 - **Analyze Aggregated Metrics**: Use `vw_fact_fire_incidents_summary` for summaries, such as `total_suppression_personnel` and `avg_number_of_alarms`.
+
+## ETL Process
+1. **Extraction**: The `load_data.py` script fetches data from the API using pagination (`$limit=1000`, `$offset`) and a date filter (last 7 days).
+2. **Transformation**: Basic cleaning (e.g., date parsing, renaming `incident_number` to `incident_id`, null handling) is performed in Python. Deduplication is handled via `ON CONFLICT DO UPDATE` using `incident_id`.
+3. **Loading**: Data is loaded into the `raw.fire_incidents_raw` table in PostgreSQL with a `loaded_at` timestamp.
+4. **Data Quality**: The `data_quality.py` script checks for nulls, duplicates, and invalid dates before and after loading.
+5. **DBT Transformation**: DBT transforms the raw data into a staging table (`stg_fire_incidents`) and creates an aggregated table (`fire_incidents_aggregated`) optimized for queries by **time period**, **district**, and **battalion**.
+6. **Freshness Check**: DBT validates that the `loaded_at` column in `raw.fire_incidents_raw` is within 24 hours, ensuring daily updates.
+
+
+## Deduplication Logic
+- Deduplication is handled at the loading stage using `incident_id` as the primary key.
+- The `ON CONFLICT DO UPDATE` clause in PostgreSQL updates existing records to reflect the latest data from the API.
+
+
+## Freshness Validation
+- The `sources.yml` defines freshness rules for `raw.fire_incidents_raw`:
+  - Warns if the latest `loaded_at` is older than 24 hours.
+  - Errors if older than 48 hours.
+- Run `dbt source freshness` to validate daily updates.
+
 
 ## Troubleshooting
 - **DBT Errors**:
