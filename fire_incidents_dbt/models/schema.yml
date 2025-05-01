@@ -27,10 +27,9 @@ models:
 
   - name: dim_time_period
     description: Dimension table for time periods derived from incident dates.
-    tests:
-      - dbt_utils.expression_is_true:
-          expression: "last_updated_at >= CURRENT_TIMESTAMP - INTERVAL '24 hours'"
-          fail_calc: "count(*)"
+    freshness:
+      warn_after: { count: 24, period: hour }
+      error_after: { count: 48, period: hour }
     columns:
       - name: time_period_id
         description: Surrogate key for the time period.
@@ -48,10 +47,9 @@ models:
 
   - name: dim_district
     description: Dimension table for geographical districts.
-    tests:
-      - dbt_utils.expression_is_true:
-          expression: "last_updated_at >= CURRENT_TIMESTAMP - INTERVAL '24 hours'"
-          fail_calc: "count(*)"
+    freshness:
+      warn_after: { count: 24, period: hour }
+      error_after: { count: 48, period: hour }
     columns:
       - name: district_id
         description: Surrogate key for the district.
@@ -69,10 +67,9 @@ models:
 
   - name: dim_battalion
     description: Dimension table for battalions.
-    tests:
-      - dbt_utils.expression_is_true:
-          expression: "last_updated_at >= CURRENT_TIMESTAMP - INTERVAL '24 hours'"
-          fail_calc: "count(*)"
+    freshness:
+      warn_after: { count: 24, period: hour }
+      error_after: { count: 48, period: hour }
     columns:
       - name: battalion_id
         description: Surrogate key for the battalion.
@@ -88,10 +85,9 @@ models:
 
   - name: fact_fire_incidents
     description: Fact table for fire incidents, linking to time period, district, and battalion dimensions.
-    tests:
-      - dbt_utils.expression_is_true:
-          expression: "last_updated_at >= CURRENT_TIMESTAMP - INTERVAL '24 hours'"
-          fail_calc: "count(*)"
+    freshness:
+      warn_after: { count: 24, period: hour }
+      error_after: { count: 48, period: hour }
     columns:
       - name: time_period_id
         description: Foreign key to dim_time_period.
