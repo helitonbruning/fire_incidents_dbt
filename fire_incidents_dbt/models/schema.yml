@@ -1,55 +1,37 @@
 version: 2
 
 models:
-  - name: stg_fire_incidents
-    description: Staging table for fire incidents with cleaned and typed data.
-    columns:
-      - name: incident_date
-        description: Date of the incident, cast to DATE.
-      - name: alarm_dttm
-        description: Date and time when the alarm was triggered, cast to TIMESTAMP.
-      - name: arrival_dttm
-        description: Date and time when the first unit arrived, cast to TIMESTAMP.
-      - name: close_dttm
-        description: Date and time when the incident was closed, cast to TIMESTAMP.
-      - name: district
-        description: District or neighborhood where the incident occurred.
-      - name: city
-        description: City where the incident occurred.
-      - name: zipcode
-        description: Postal code of the incident location.
-      - name: battalion
-        description: Battalion responsible for the incident.
-      - name: station_area
-        description: Area of the fire station responsible for the incident.
-      - name: loaded_at
-        description: Timestamp when the record was loaded into the data warehouse.
-
   - name: dim_time_period
     description: Dimension table for time periods derived from incident dates.
-    freshness:
-      warn_after: { count: 24, period: hour }
-      error_after: { count: 48, period: hour }
     columns:
       - name: time_period_id
         description: Surrogate key for the time period.
         tests:
           - unique
           - not_null
+      - name: incident_date
+        description: Date of the incident.
+        tests:
+          - not_null
       - name: incident_year
         description: Year of the incident (part of Time Period dimension category).
+        tests:
+          - not_null
       - name: incident_month
         description: Year and month of the incident (part of Time Period dimension category).
+        tests:
+          - not_null
       - name: incident_quarter
         description: Year and quarter of the incident (part of Time Period dimension category).
+        tests:
+          - not_null
       - name: last_updated_at
         description: Timestamp of the most recent source record contributing to this dimension row.
+        tests:
+          - not_null
 
   - name: dim_district
     description: Dimension table for geographical districts.
-    freshness:
-      warn_after: { count: 24, period: hour }
-      error_after: { count: 48, period: hour }
     columns:
       - name: district_id
         description: Surrogate key for the district.
@@ -58,18 +40,23 @@ models:
           - not_null
       - name: district
         description: District or neighborhood where the incident occurred (part of District dimension category).
+        tests:
+          - not_null
       - name: city
         description: City where the incident occurred (part of District dimension category).
+        tests:
+          - not_null
       - name: zipcode
         description: Postal code of the incident location (part of District dimension category).
+        tests:
+          - not_null
       - name: last_updated_at
         description: Timestamp of the most recent source record contributing to this dimension row.
+        tests:
+          - not_null
 
   - name: dim_battalion
     description: Dimension table for battalions.
-    freshness:
-      warn_after: { count: 24, period: hour }
-      error_after: { count: 48, period: hour }
     columns:
       - name: battalion_id
         description: Surrogate key for the battalion.
@@ -78,24 +65,51 @@ models:
           - not_null
       - name: battalion
         description: Battalion responsible for the incident (part of Battalion dimension category).
+        tests:
+          - not_null
       - name: station_area
         description: Area of the fire station responsible for the incident (part of Battalion dimension category).
+        tests:
+          - not_null
       - name: last_updated_at
         description: Timestamp of the most recent source record contributing to this dimension row.
+        tests:
+          - not_null
 
   - name: fact_fire_incidents
     description: Fact table for fire incidents, linking to time period, district, and battalion dimensions.
-    freshness:
-      warn_after: { count: 24, period: hour }
-      error_after: { count: 48, period: hour }
+    tests:
+      - test_row_count_match:
+          source_table: source('staging', 'stg_fire_incidents')
+          target_table: ref('fact_fire_incidents')
     columns:
       - name: time_period_id
         description: Foreign key to dim_time_period.
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_time_period')
+              field: time_period_id
       - name: district_id
         description: Foreign key to dim_district.
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_district')
+              field: district_id
       - name: battalion_id
         description: Foreign key to dim_battalion.
-      - name: total_incidents
-        description: Total number of incidents for the given time period, district, and battalion.
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_battalion')
+              field: battalion_id
+      - name: incident_id
+        description: Unique identifier for the incident.
+        tests:
+          - unique
+          - not_null
       - name: last_updated_at
         description: Timestamp of the most recent source record contributing to this fact row.
+        tests:
+          - not_null
