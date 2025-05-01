@@ -20,6 +20,7 @@ WITH distinct_dates AS (
 
 time_periods AS (
     SELECT
+        DISTINCT
         {{ dbt_utils.generate_surrogate_key(['incident_date']) }} AS time_period_id,
         incident_date,
         EXTRACT(YEAR FROM incident_date) AS incident_year,

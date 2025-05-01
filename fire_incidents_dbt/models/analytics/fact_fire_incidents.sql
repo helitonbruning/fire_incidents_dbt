@@ -117,12 +117,12 @@ SELECT
     s.number_of_floors_with_heavy_damage,
     CURRENT_TIMESTAMP AS last_updated_at
 FROM stg_data s
-LEFT JOIN time_period t
+INNER JOIN time_period t
     ON s.incident_date = t.incident_date
-LEFT JOIN district d
+INNER JOIN district d
     ON s.district = d.district
     AND s.city = d.city
     AND s.zipcode = d.zipcode
-LEFT JOIN battalion b
+INNER JOIN battalion b
     ON s.battalion = b.battalion
     AND (s.station_area = b.station_area OR (s.station_area IS NULL AND b.station_area IS NULL))

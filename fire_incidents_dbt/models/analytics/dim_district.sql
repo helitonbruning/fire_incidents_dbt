@@ -10,6 +10,7 @@
 
 WITH distinct_districts AS (
     SELECT
+        DISTINCT
         {{ dbt_utils.generate_surrogate_key(['district', 'city', 'zipcode']) }} AS district_id,
         district,
         city,

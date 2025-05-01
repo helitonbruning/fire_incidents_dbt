@@ -10,6 +10,7 @@
 
 WITH distinct_battalions AS (
     SELECT
+        DISTINCT
         {{ dbt_utils.generate_surrogate_key(['battalion', 'station_area']) }} AS battalion_id,
         battalion,
         station_area,
