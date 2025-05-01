@@ -3,7 +3,31 @@
         materialized='incremental',
         schema='analytics',
         unique_key='incident_id',
-        incremental_strategy='merge'
+        incremental_strategy='merge',
+        merge_update_columns=[
+            'call_number',
+            'exposure_number',
+            'suppression_units',
+            'suppression_personnel',
+            'ems_units',
+            'ems_personnel',
+            'other_units',
+            'other_personnel',
+            'estimated_property_loss',
+            'estimated_contents_loss',
+            'fire_fatalities',
+            'fire_injuries',
+            'civilian_fatalities',
+            'civilian_injuries',
+            'number_of_alarms',
+            'number_of_floors_with_minimum_damage',
+            'number_of_floors_with_significant_damage',
+            'number_of_floors_with_heavy_damage',
+            'time_period_id',
+            'district_id',
+            'battalion_id',
+            'last_updated_at'
+        ]
     )
 }}
 
@@ -40,7 +64,7 @@ WITH stg_data AS (
         loaded_at
     FROM {{ ref('stg_fire_incidents') }}
     {% if is_incremental() %}
-    WHERE incident_date >= CURRENT_DATE - INTERVAL '7 days'
+    WHERE loaded_at > (SELECT MAX(last_updated_at) FROM {{ this }})
     {% endif %}
 ),
 

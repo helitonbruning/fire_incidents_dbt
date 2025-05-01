@@ -4,18 +4,21 @@
         schema='analytics',
         unique_key="district_id",
         incremental_strategy='merge',
+        merge_update_columns=['last_updated_at']
     )
 }}
 
 WITH distinct_districts AS (
-    SELECT DISTINCT
-        ROW_NUMBER() OVER (ORDER BY district, city, zipcode) AS district_id,
+    SELECT
+        {{ dbt_utils.generate_surrogate_key(['district', 'city', 'zipcode']) }} AS district_id,
         district,
         city,
         zipcode,
         loaded_at AS last_updated_at
     FROM {{ ref('stg_fire_incidents') }}
-    WHERE incident_date >= CURRENT_DATE - INTERVAL '7 days'
+    {% if is_incremental() %}
+    WHERE loaded_at > (SELECT MAX(last_updated_at) FROM {{ this }})
+    {% endif %}
 )
 
 SELECT
@@ -25,6 +28,3 @@ SELECT
     zipcode,
     last_updated_at
 FROM distinct_districts
-{% if is_incremental() %}
-WHERE district || city || zipcode NOT IN (SELECT district || city || zipcode FROM {{ this }})
-{% endif %}
