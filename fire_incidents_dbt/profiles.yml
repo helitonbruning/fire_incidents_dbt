@@ -1,0 +1,11 @@
+fire_incidents_dbt:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: localhost  # Nome do serviço no Docker Compose
+      port: 5432
+      user: postgres
+      password: postgre
+      dbname: fire_incidents
+      schema: public
