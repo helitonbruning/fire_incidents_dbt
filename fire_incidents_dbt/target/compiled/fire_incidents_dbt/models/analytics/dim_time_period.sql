@@ -1,16 +1,9 @@
-{{
-    config(
-        materialized='incremental',
-        schema='analytics',
-        unique_key='incident_date',
-        incremental_strategy='merge',
-    )
-}}
+
 WITH distinct_dates AS (
     SELECT DISTINCT
         incident_date,
         loaded_at
-    FROM {{ ref('stg_fire_incidents') }}
+    FROM "fire_incidents"."public_staging"."stg_fire_incidents"
     WHERE incident_date >= CURRENT_DATE - INTERVAL '7 days'
 ),
 time_periods AS (
@@ -25,6 +18,5 @@ time_periods AS (
 )
 
 SELECT * FROM time_periods
-{% if is_incremental() %}
-WHERE incident_date NOT IN (SELECT incident_date FROM {{ this }})
-{% endif %}
+
+WHERE incident_date NOT IN (SELECT incident_date FROM "fire_incidents"."public_analytics"."dim_time_period")

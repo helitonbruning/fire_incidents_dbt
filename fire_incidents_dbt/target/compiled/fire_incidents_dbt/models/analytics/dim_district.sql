@@ -1,11 +1,4 @@
-{{
-    config(
-        materialized='incremental',
-        schema='analytics',
-        unique_key="district_id",
-        incremental_strategy='merge',
-    )
-}}
+
 
 WITH distinct_districts AS (
     SELECT DISTINCT
@@ -14,7 +7,7 @@ WITH distinct_districts AS (
         city,
         zipcode,
         loaded_at AS last_updated_at
-    FROM {{ ref('stg_fire_incidents') }}
+    FROM "fire_incidents"."public_staging"."stg_fire_incidents"
     WHERE incident_date >= CURRENT_DATE - INTERVAL '7 days'
 )
 
@@ -25,6 +18,5 @@ SELECT
     zipcode,
     last_updated_at
 FROM distinct_districts
-{% if is_incremental() %}
-WHERE district || city || zipcode NOT IN (SELECT district || city || zipcode FROM {{ this }})
-{% endif %}
+
+WHERE district || city || zipcode NOT IN (SELECT district || city || zipcode FROM "fire_incidents"."public_analytics"."dim_district")

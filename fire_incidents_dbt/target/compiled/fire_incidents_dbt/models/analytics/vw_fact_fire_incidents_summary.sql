@@ -1,9 +1,4 @@
-{{
-    config(
-        materialized='view',
-        schema='analytics'
-    )
-}}
+
 
 SELECT
     time_period_id,
@@ -28,5 +23,5 @@ SELECT
     AVG(number_of_floors_with_significant_damage) AS avg_floors_with_significant_damage,
     AVG(number_of_floors_with_heavy_damage) AS avg_floors_with_heavy_damage,
     MAX(last_updated_at) AS last_updated_at
-FROM {{ ref('fact_fire_incidents') }}
+FROM "fire_incidents"."public_analytics"."fact_fire_incidents"
 GROUP BY time_period_id, district_id, battalion_id

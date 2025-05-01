@@ -1,0 +1,105 @@
+version: 2
+
+models:
+  - name: stg_fire_incidents
+    description: Staging table for fire incidents with cleaned and typed data.
+    columns:
+      - name: incident_date
+        description: Date of the incident, cast to DATE.
+      - name: alarm_dttm
+        description: Date and time when the alarm was triggered, cast to TIMESTAMP.
+      - name: arrival_dttm
+        description: Date and time when the first unit arrived, cast to TIMESTAMP.
+      - name: close_dttm
+        description: Date and time when the incident was closed, cast to TIMESTAMP.
+      - name: district
+        description: District or neighborhood where the incident occurred.
+      - name: city
+        description: City where the incident occurred.
+      - name: zipcode
+        description: Postal code of the incident location.
+      - name: battalion
+        description: Battalion responsible for the incident.
+      - name: station_area
+        description: Area of the fire station responsible for the incident.
+      - name: loaded_at
+        description: Timestamp when the record was loaded into the data warehouse.
+
+  - name: dim_time_period
+    description: Dimension table for time periods derived from incident dates.
+    tests:
+      - dbt_utils.expression_is_true:
+          expression: "last_updated_at >= CURRENT_TIMESTAMP - INTERVAL '24 hours'"
+          fail_calc: "count(*)"
+    columns:
+      - name: time_period_id
+        description: Surrogate key for the time period.
+        tests:
+          - unique
+          - not_null
+      - name: incident_year
+        description: Year of the incident (part of Time Period dimension category).
+      - name: incident_month
+        description: Year and month of the incident (part of Time Period dimension category).
+      - name: incident_quarter
+        description: Year and quarter of the incident (part of Time Period dimension category).
+      - name: last_updated_at
+        description: Timestamp of the most recent source record contributing to this dimension row.
+
+  - name: dim_district
+    description: Dimension table for geographical districts.
+    tests:
+      - dbt_utils.expression_is_true:
+          expression: "last_updated_at >= CURRENT_TIMESTAMP - INTERVAL '24 hours'"
+          fail_calc: "count(*)"
+    columns:
+      - name: district_id
+        description: Surrogate key for the district.
+        tests:
+          - unique
+          - not_null
+      - name: district
+        description: District or neighborhood where the incident occurred (part of District dimension category).
+      - name: city
+        description: City where the incident occurred (part of District dimension category).
+      - name: zipcode
+        description: Postal code of the incident location (part of District dimension category).
+      - name: last_updated_at
+        description: Timestamp of the most recent source record contributing to this dimension row.
+
+  - name: dim_battalion
+    description: Dimension table for battalions.
+    tests:
+      - dbt_utils.expression_is_true:
+          expression: "last_updated_at >= CURRENT_TIMESTAMP - INTERVAL '24 hours'"
+          fail_calc: "count(*)"
+    columns:
+      - name: battalion_id
+        description: Surrogate key for the battalion.
+        tests:
+          - unique
+          - not_null
+      - name: battalion
+        description: Battalion responsible for the incident (part of Battalion dimension category).
+      - name: station_area
+        description: Area of the fire station responsible for the incident (part of Battalion dimension category).
+      - name: last_updated_at
+        description: Timestamp of the most recent source record contributing to this dimension row.
+
+  - name: fact_fire_incidents
+    description: Fact table for fire incidents, linking to time period, district, and battalion dimensions.
+    tests:
+      - dbt_utils.expression_is_true:
+          expression: "last_updated_at >= CURRENT_TIMESTAMP - INTERVAL '24 hours'"
+          fail_calc: "count(*)"
+    columns:
+      - name: time_period_id
+        description: Foreign key to dim_time_period.
+      - name: district_id
+        description: Foreign key to dim_district.
+      - name: battalion_id
+        description: Foreign key to dim_battalion.
+      - name: total_incidents
+        description: Total number of incidents for the given time period, district, and battalion.
+      - name: last_updated_at
+        description: Timestamp of the most recent source record contributing to this fact row.

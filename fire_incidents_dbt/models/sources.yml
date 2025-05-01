@@ -1,0 +1,38 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: raw
+    tables:
+      - name: fire_incidents_raw
+        description: Tabela raw com dados brutos de incidentes de incêndio carregados da API do San Francisco Fire Department.
+        freshness:
+          warn_after: { count: 24, period: hour }
+          error_after: { count: 48, period: hour }
+        loaded_at_field: loaded_at
+        columns:
+          - name: incident_id
+            description: Identificador único do incidente.
+            tests:
+              - unique
+              - not_null
+          - name: incident_date
+            description: Data do incidente.
+            tests:
+              - not_null
+          - name: district
+            description: Distrito ou bairro onde o incidente ocorreu.
+            tests:
+              - not_null
+          - name: battalion
+            description: Batalhão responsável pelo incidente.
+            tests:
+              - not_null
+          - name: address
+            description: Endereço do incidente.
+          - name: call_number
+            description: Número da chamada associada ao incidente.
+          - name: loaded_at
+            description: Timestamp de quando o registro foi carregado no data warehouse.
+            tests:
+              - not_null
