@@ -93,7 +93,7 @@ The project is organized as follows:
    Execute the Python script to fetch data from the API and load it into PostgreSQL:
    ```bash
    cd API
-   python load_data.py
+   python etl.py
    ```
    
 4. **Run the DBT Pipeline**:
